@@ -1,0 +1,45 @@
+# 1. Funktsioon juhusliku parooli genereerimiseks
+function Generate-Password {
+    $length = 12
+    $characters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*"
+    $password = ""
+    for ($i = 0; $i -lt $length; $i++) {
+        $password += $characters[(Get-Random -Minimum 0 -Maximum $characters.Length)]
+    }
+    return $password
+}
+
+# 2. Kasutaja andmed (näide, kui loed failist või sisestad käsitsi)
+$eesnimi = "Mari"
+$perenimi = "Maasikas"
+$kasutajaNimi = "$($eesnimi.ToLower()).$($perenimi.ToLower())"
+
+# Genereerime unikaalse parooli
+$genereeritudParool = Generate-Password
+$securePassword = ConvertTo-SecureString $genereeritudParool -AsPlainText -Force
+
+# 3. Kasutaja loomine AD-sse
+try {
+    # Kontrollime, kas on juba olemas (ülesanne 3 loogika)
+    if (Get-ADUser -Filter "SamAccountName -eq '$kasutajaNimi'") {
+        Write-Host "Kasutaja $kasutajaNimi on juba olemas." -ForegroundColor Yellow
+    } else {
+        New-ADUser -Name "$eesnimi $perenimi" -SamAccountName $kasutajaNimi `
+                   -AccountPassword $securePassword -Enabled $true
+        
+        Write-Host "Edu: Kasutaja $kasutajaNimi loodud parooliga: $genereeritudParool" -ForegroundColor Green
+
+        # 4. Salvestame info CSV faili (ülesande nõue)
+        $tulemus = [PSCustomObject]@{
+            Kasutajatunnus = $kasutajaNimi
+            Parool         = $genereeritudParool
+            LoomiseAeg     = Get-Date
+        }
+        
+        # Lisame info faili (Append lisab uue rea, mitte ei kirjuta üle)
+        $tulemus | Export-Csv -Path "kasutajanimi.csv" -NoTypeInformation -Append -Encoding UTF8
+    }
+}
+catch {
+    Write-Host "Viga: Kasutaja loomine ebaõnnestus: $_" -ForegroundColor Red
+}
