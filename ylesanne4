@@ -1,0 +1,23 @@
+$ErrorActionPreference = "SilentlyContinue"
+# 1. Küsime ees- ja perenime
+$eesnimi = Read-Host "Sisesta kasutaja eesnimi"
+$perenimi = Read-Host "Sisesta kasutaja perenimi"
+
+# 2. Kasutajanime moodustamine (näiteks eesnimi.perenimi)
+# Siia saab vajadusel lisada transliit-funktsiooni täpitähtede asendamiseks
+$kasutajaNimi = "$($eesnimi.ToLower()).$($perenimi.ToLower())"
+
+Write-Host "Proovin kustutada kasutajat: $kasutajaNimi" -ForegroundColor Cyan
+
+# 3. & 4. Kasutaja kustutamine ja kontroll
+# Kasutame -Confirm:$false, et skript ei küsiks kinnitust
+# Kasutame -ErrorAction SilentlyContinue, et peita punased veateated
+Remove-ADUser -Identity $kasutajaNimi -Confirm:$false -ErrorAction SilentlyContinue
+
+if ($?) {
+    # Kui kustutamine õnnestus
+    Write-Host "Edu: Kasutaja '$kasutajaNimi' on edukalt AD-st eemaldatud!" -ForegroundColor Green
+} else {
+    # Kui tekkis viga (kasutajat pole või muu probleem)
+    Write-Host "Viga: Kasutaja '$kasutajaNimi' kustutamine ebaõnnestus või kasutajat ei leitud." -ForegroundColor Red
+}
