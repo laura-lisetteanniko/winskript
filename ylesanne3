@@ -1,0 +1,24 @@
+# Oletame, et $kasutajaNimi tuleb sinu andmefailist
+$kasutajaNimi = "tamm.jaan"
+
+# 1. Kontrollime, kas kasutaja on juba olemas
+$olemasolevKasutaja = Get-ADUser -Filter "SamAccountName -eq '$kasutajaNimi'"
+
+if ($olemasolevKasutaja) {
+    # Kui kasutaja leiti, väljastame viisaka teate
+    Write-Host "Teave: Kasutaja '$kasutajaNimi' on juba süsteemis olemas. Lisamist ei toimu." -ForegroundColor Yellow
+} else {
+    # 2. Kui kasutajat ei ole, proovime teda lisada
+    try {
+        New-ADUser -Name $kasutajaNimi -SamAccountName $kasutajaNimi -Enabled $false
+        
+        # Kontrollime viimase käsu edukust ($?)
+        if ($?) {
+            Write-Host "Edu: Kasutaja '$kasutajaNimi' on edukalt lisatud!" -ForegroundColor Green
+        }
+    }
+    catch {
+        # Kui midagi läks siiski valesti (nt puuduvad õigused)
+        Write-Host "Viga: Kasutaja '$kasutajaNimi' lisamine ebaõnnestus. Veateade: $_" -ForegroundColor Red
+    }
+}
