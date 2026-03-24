@@ -1,0 +1,33 @@
+# 1. Loo varunduse sihtkoht, kui seda veel pole
+$backupRoot = "C:\Backup"
+if (!(Test-Path $backupRoot)) {
+    New-Item -Path $backupRoot -ItemType Directory
+    Write-Host "Loodi kaust $backupRoot" -ForegroundColor Cyan
+}
+
+# 2. Võta kõik AD kasutajad, kellel on määratud kodukataloog
+$kasutajad = Get-ADUser -Filter * -Properties HomeDirectory
+
+foreach ($kasutaja in $kasutajad) {
+    $nimi = $kasutaja.SamAccountName
+    $koduKataloog = $kasutaja.HomeDirectory
+    
+    # Kontrollime, kas kodukataloog on määratud ja kas see eksisteerib kettal
+    if ($koduKataloog -and (Test-Path $koduKataloog)) {
+        $kuupaev = Get-Date -Format "dd.MM.yyyy"
+        $sihtFail = Join-Path $backupRoot "$nimi-$kuupaev.zip"
+        
+        Write-Host "Varundan kasutajat $nimi asukohast $koduKataloog..." -ForegroundColor Yellow
+        
+        try {
+            # 3. Arhiveerime kataloogi sisu
+            Compress-Archive -Path "$koduKataloog\*" -DestinationPath $sihtFail -Force -ErrorAction Stop
+            Write-Host "Edu: $sihtFail loodud!" -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Viga: Kasutaja $nimi varundamine ebaõnnestus: $_" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Teave: Kasutajal $nimi puudub kodukataloog või seda ei leitud." -ForegroundColor Gray
+    }
+}
